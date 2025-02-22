@@ -1,0 +1,81 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# VS Code settings
+.vscode/
+.code-workspace
+
+# Test cache, coverage, and logs
+.pytest_cache/
+.coverage
+coverage.xml
+*.cover
+*.log
+.cache
+nosetests.xml
+coverage/
+htmlcov/
+.tox/
+.junit/
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# MacOS specific files
+.DS_Store
+
+# Temporary files and backups
+*.bak
+*.swp
+*.tmp
+*~
+
+# Python virtual environment
+# Ignore this folder since you already have venv
+venv/
+
+# Environment Variables
+.env
+.env.*
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output/
+
+# JetBrains IDEs (optional, if using)
+.idea/
+*.iml
+results
