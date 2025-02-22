@@ -22,7 +22,7 @@ if not os.path.exists(RESULTS_DIR):
 
 # ----------------- Helper Function to Get ngrok URL -----------------
 def get_backend_url():
-   return "http://127.0.0.1:8000"
+    return os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
 
 # ===================== Cylindrical Bending Analysis Code =====================
 class Analysis:
