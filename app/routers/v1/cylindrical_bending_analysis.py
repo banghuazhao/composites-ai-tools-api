@@ -286,7 +286,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             plt.xlabel(r"$x_3$ (m)")
             plt.ylabel("Displacement (m)")
             plt.grid(True)
-            plt.savefig(os.path.join(RESULTS_DIR, "fig2d_displacement.png"))
+            plt.savefig(os.path.join(RESULTS_DIR, "fig2d-displacement.png"))
             plt.close()
             plt.figure(figsize=(8, 6))
             for i in range(len(strain_numeric_1d)):
@@ -294,7 +294,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             plt.xlabel(r"$x_3$ (m)")
             plt.ylabel("Strain")
             plt.grid(True)
-            plt.savefig(os.path.join(RESULTS_DIR, "fig2d_strain.png"))
+            plt.savefig(os.path.join(RESULTS_DIR, "fig2d-strain.png"))
             plt.close()
             plt.figure(figsize=(8, 6))
             for i in range(len(stress_numeric_1d)):
@@ -302,7 +302,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             plt.xlabel(r"$x_3$ (m)")
             plt.ylabel("Stress (Pa)")
             plt.grid(True)
-            plt.savefig(os.path.join(RESULTS_DIR, "fig2d_stress.png"))
+            plt.savefig(os.path.join(RESULTS_DIR, "fig2d-stress.png"))
             plt.close()
         if "2d_standalone" in plots:
             for i in range(len(disp_numeric_1d)):
@@ -311,7 +311,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
                 plt.xlabel(r"$x_3$ (m)")
                 plt.ylabel("Displacement (m)")
                 plt.grid(True)
-                plt.savefig(os.path.join(RESULTS_DIR, f"fig2d_disp_{i}.png"))
+                plt.savefig(os.path.join(RESULTS_DIR, f"fig2d-disp-{i}.png"))
                 plt.close()
             for i in range(len(strain_numeric_1d)):
                 plt.figure(figsize=(8, 6))
@@ -319,7 +319,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
                 plt.xlabel(r"$x_3$ (m)")
                 plt.ylabel("Strain")
                 plt.grid(True)
-                plt.savefig(os.path.join(RESULTS_DIR, f"fig2d_strain_{i}.png"))
+                plt.savefig(os.path.join(RESULTS_DIR, f"fig2d-strain-{i}.png"))
                 plt.close()
             for i in range(len(stress_numeric_1d)):
                 plt.figure(figsize=(8, 6))
@@ -327,7 +327,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
                 plt.xlabel(r"$x_3$ (m)")
                 plt.ylabel("Stress (Pa)")
                 plt.grid(True)
-                plt.savefig(os.path.join(RESULTS_DIR, f"fig2d_stress_{i}.png"))
+                plt.savefig(os.path.join(RESULTS_DIR, f"fig2d-stress-{i}.png"))
                 plt.close()
     if plots and "3d" in plots:
         def evaluate_functions(func_list, threshold):
@@ -346,7 +346,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             ax.set_ylabel("$x_3$")
             ax.set_title(f"3D Displacement Component {i}")
             fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10)
-            plt.savefig(os.path.join(RESULTS_DIR, f"fig3d_disp_{i}.png"))
+            plt.savefig(os.path.join(RESULTS_DIR, f"fig3d-disp-{i}.png"))
             plt.close(fig)
         for i in range(len(strain_numeric_3d)):
             fig = plt.figure(figsize=(8, 6))
@@ -356,7 +356,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             ax.set_ylabel("$x_3$")
             ax.set_title(f"3D Strain Component {i}")
             fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10)
-            plt.savefig(os.path.join(RESULTS_DIR, f"fig3d_strain_{i}.png"))
+            plt.savefig(os.path.join(RESULTS_DIR, f"fig3d-strain-{i}.png"))
             plt.close(fig)
         for i in range(len(stress_numeric_3d)):
             fig = plt.figure(figsize=(8, 6))
@@ -366,7 +366,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             ax.set_ylabel("$x_3$")
             ax.set_title(f"3D Stress Component {i}")
             fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10)
-            plt.savefig(os.path.join(RESULTS_DIR, f"fig3d_stress_{i}.png"))
+            plt.savefig(os.path.join(RESULTS_DIR, f"fig3d-stress-{i}.png"))
             plt.close(fig)
 
 # ===================== Probing Functions =====================
@@ -523,16 +523,16 @@ def laminate_analysis(request: CylindricalBendingInput):
     figures = {}
     if request.plots:
         if "2d_combined" in request.plots:
-            figures["2d_displacement"] = f"{public_url}/results/fig2d_displacement.png"
-            figures["2d_strain"] = f"{public_url}/results/fig2d_strain.png"
-            figures["2d_stress"] = f"{public_url}/results/fig2d_stress.png"
+            figures["2d_displacement"] = f"{public_url}/results/fig2d-displacement.png"
+            figures["2d_strain"] = f"{public_url}/results/fig2d-strain.png"
+            figures["2d_stress"] = f"{public_url}/results/fig2d-stress.png"
         if "2d_standalone" in request.plots:
-            figures["2d_displacement_u1"] = f"{public_url}/results/fig2d_disp_0.png"
-            figures["2d_displacement_u2"] = f"{public_url}/results/fig2d_disp_1.png"
-            figures["2d_displacement_u3"] = f"{public_url}/results/fig2d_disp_2.png"
+            figures["2d_displacement_u1"] = f"{public_url}/results/fig2d-disp-0.png"
+            figures["2d_displacement_u2"] = f"{public_url}/results/fig2d-disp-1.png"
+            figures["2d_displacement_u3"] = f"{public_url}/results/fig2d-disp-2.png"
         if "3d" in request.plots:
-            figures["3d_displacement"] = f"{public_url}/results/fig3d_disp_0.png"
-            figures["3d_strain"] = f"{public_url}/results/fig3d_strain_0.png"
-            figures["3d_stress"] = f"{public_url}/results/fig3d_stress_0.png"
+            figures["3d_displacement"] = f"{public_url}/results/fig3d-disp-0.png"
+            figures["3d_strain"] = f"{public_url}/results/fig3d-strain-0.png"
+            figures["3d_stress"] = f"{public_url}/results/fig3d-stress-0.png"
     probe_results = results.get("probe_results") if results else None
     return CylindricalBendingOutput(figures=figures, probe_results=probe_results)
