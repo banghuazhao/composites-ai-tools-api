@@ -78,4 +78,5 @@ fastlane/test_output/
 # JetBrains IDEs (optional, if using)
 .idea/
 *.iml
-results
+results/*
+!results/.gitkeep
