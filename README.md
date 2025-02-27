@@ -31,8 +31,8 @@
 
 ## Technologies
 
-- **FastAPI**: A modern, fast (high-performance) web framework for building APIs with Python 3.7+ based on standard Python-type hints.
-- **Python 3.7**: Programming language used to implement the logic.
+- **FastAPI**: A modern, fast (high-performance) web framework for building APIs with Python 3.10.12+ based on standard Python-type hints.
+- **Python 3.10.12**: Programming language used to implement the logic.
 - **Pytest**: A robust testing framework for Python.
 - **Uvicorn**: ASGI server used for serving FastAPI applications.
 - **Virtual Environment (venv)**: For dependency isolation.
@@ -90,7 +90,7 @@ docker ps
 To set up the project locally, follow these steps:
 
 ### Prerequisites
-- Python 3.7 or higher.
+- Python 3.10.12 or higher.
 - Git installed on your system.
 
 ### Step-by-Step Guide
