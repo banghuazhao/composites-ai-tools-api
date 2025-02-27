@@ -323,7 +323,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             plt.ylabel("Displacement (m)")
             plt.legend()
             plt.grid(True)
-            plt.savefig(os.path.join(RESULTS_DIR, "fig2d_displacement.png"))
+            plt.savefig(os.path.join(RESULTS_DIR, "fig2d-displacement.png"))
             plt.close()
 
             # Combined 2D Strain Plot
@@ -334,7 +334,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             plt.ylabel("Strain")
             plt.legend()
             plt.grid(True)
-            plt.savefig(os.path.join(RESULTS_DIR, "fig2d_strain.png"))
+            plt.savefig(os.path.join(RESULTS_DIR, "fig2d-strain.png"))
             plt.close()
 
             # Combined 2D Stress Plot
@@ -345,7 +345,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             plt.ylabel("Stress (Pa)")
             plt.legend()
             plt.grid(True)
-            plt.savefig(os.path.join(RESULTS_DIR, "fig2d_stress.png"))
+            plt.savefig(os.path.join(RESULTS_DIR, "fig2d-stress.png"))
             plt.close()
 
         if "2d_standalone" in plots:
@@ -357,7 +357,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
                 plt.ylabel("Displacement (m)")
                 plt.legend()
                 plt.grid(True)
-                plt.savefig(os.path.join(RESULTS_DIR, f"fig2d_disp_{i}.png"))
+                plt.savefig(os.path.join(RESULTS_DIR, f"fig2d-disp-{i}.png"))
                 plt.close()
 
             # Standalone 2D Strain Plots
@@ -368,7 +368,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
                 plt.ylabel("Strain")
                 plt.legend()
                 plt.grid(True)
-                plt.savefig(os.path.join(RESULTS_DIR, f"fig2d_strain_{i}.png"))
+                plt.savefig(os.path.join(RESULTS_DIR, f"fig2d-strain-{i}.png"))
                 plt.close()
 
             # Standalone 2D Stress Plots
@@ -379,7 +379,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
                 plt.ylabel("Stress (Pa)")
                 plt.legend()
                 plt.grid(True)
-                plt.savefig(os.path.join(RESULTS_DIR, f"fig2d_stress_{i}.png"))
+                plt.savefig(os.path.join(RESULTS_DIR, f"fig2d-stress-{i}.png"))
                 plt.close()
 
     if "3d" in plots:
@@ -406,7 +406,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             ax.set_title(f"3D Displacement {disp_titles_3d[i]}")
             fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10)
             fig.tight_layout()
-            plt.savefig(os.path.join(RESULTS_DIR, f"fig3d_disp_{i}.png"))
+            plt.savefig(os.path.join(RESULTS_DIR, f"fig3d-disp-{i}.png"))
             plt.close(fig)
 
         # 3D Strain Plots (Standalone per component)
@@ -422,7 +422,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             ax.set_title(f"3D Strain {strain_titles_3d[i]}")
             fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10)
             fig.tight_layout()
-            plt.savefig(os.path.join(RESULTS_DIR, f"fig3d_strain_{i}.png"))
+            plt.savefig(os.path.join(RESULTS_DIR, f"fig3d-strain-{i}.png"))
             plt.close(fig)
 
         # 3D Stress Plots (Standalone per component)
@@ -438,7 +438,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             ax.set_title(f"3D Stress {stress_titles_3d[i]}")
             fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10)
             fig.tight_layout()
-            plt.savefig(os.path.join(RESULTS_DIR, f"fig3d_stress_{i}.png"))
+            plt.savefig(os.path.join(RESULTS_DIR, f"fig3d-stress-{i}.png"))
             plt.close(fig)
 
 # ===================== Probing Functions =====================
