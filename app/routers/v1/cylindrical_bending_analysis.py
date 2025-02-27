@@ -316,7 +316,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
         # --- Run only requested plots ---
         if "2d_combined" in plots:
             # Combined 2D Displacement Plot
-            plt.figure(figsize=(8, 6))
+            plt.figure(figsize=(5, 4))
             for i in range(len(disp_numeric_1d)):
                 plt.plot(x3_vals, disp_numeric_1d[i], linewidth=2, label=disp_labels[i])
             plt.xlabel(r"$x_3$ (m)")
@@ -327,7 +327,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             plt.close()
 
             # Combined 2D Strain Plot
-            plt.figure(figsize=(8, 6))
+            plt.figure(figsize=(5, 4))
             for i in range(len(strain_numeric_1d)):
                 plt.plot(x3_vals, strain_numeric_1d[i], linewidth=2, label=strain_labels[i])
             plt.xlabel(r"$x_3$ (m)")
@@ -338,7 +338,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             plt.close()
 
             # Combined 2D Stress Plot
-            plt.figure(figsize=(8, 6))
+            plt.figure(figsize=(5, 4))
             for i in range(len(stress_numeric_1d)):
                 plt.plot(x3_vals, stress_numeric_1d[i], linewidth=2, label=stress_labels[i])
             plt.xlabel(r"$x_3$ (m)")
@@ -351,7 +351,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
         if "2d_standalone" in plots:
             # Standalone 2D Displacement Plots
             for i in range(len(disp_numeric_1d)):
-                plt.figure(figsize=(8, 6))
+                plt.figure(figsize=(5, 4))
                 plt.plot(x3_vals, disp_numeric_1d[i], linewidth=2, label=disp_labels[i])
                 plt.xlabel(r"$x_3$ (m)")
                 plt.ylabel("Displacement (m)")
@@ -362,7 +362,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
 
             # Standalone 2D Strain Plots
             for i in range(len(strain_numeric_1d)):
-                plt.figure(figsize=(8, 6))
+                plt.figure(figsize=(5, 4))
                 plt.plot(x3_vals, strain_numeric_1d[i], linewidth=2, label=strain_labels[i])
                 plt.xlabel(r"$x_3$ (m)")
                 plt.ylabel("Strain")
@@ -373,7 +373,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
 
             # Standalone 2D Stress Plots
             for i in range(len(stress_numeric_1d)):
-                plt.figure(figsize=(8, 6))
+                plt.figure(figsize=(5, 4))
                 plt.plot(x3_vals, stress_numeric_1d[i], linewidth=2, label=stress_labels[i])
                 plt.xlabel(r"$x_3$ (m)")
                 plt.ylabel("Stress (Pa)")
@@ -397,7 +397,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
         # 3D Displacement Plots (Standalone per component)
         disp_titles_3d = [r"$u_1$ (m)", r"$u_2$ (m)", r"$u_3$ (m)"]
         for i in range(len(disp_numeric_3d)):
-            fig = plt.figure(figsize=(8, 6))
+            fig = plt.figure(figsize=(5, 4))
             ax = fig.add_subplot(111, projection='3d')
             surf = ax.plot_surface(X1, X3, disp_numeric_3d[i], cmap='gist_rainbow')
             ax.set_xlabel("$x_1$")
@@ -413,7 +413,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
         strain_titles_3d = [r"$\epsilon_{11}$", r"$\epsilon_{22}$", r"$\epsilon_{33}$",
                             r"$\gamma_{23}$", r"$\gamma_{13}$", r"$\gamma_{12}$"]
         for i in range(len(strain_numeric_3d)):
-            fig = plt.figure(figsize=(8, 6))
+            fig = plt.figure(figsize=(5, 4))
             ax = fig.add_subplot(111, projection='3d')
             surf = ax.plot_surface(X1, X3, strain_numeric_3d[i], cmap='gist_rainbow')
             ax.set_xlabel("$x_1$")
@@ -429,7 +429,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
         stress_titles_3d = [r"$\sigma_{11}$ (Pa)", r"$\sigma_{22}$ (Pa)", r"$\sigma_{33}$ (Pa)",
                             r"$\sigma_{23}$ (Pa)", r"$\sigma_{13}$ (Pa)", r"$\sigma_{12}$ (Pa)"]
         for i in range(len(stress_numeric_3d)):
-            fig = plt.figure(figsize=(8, 6))
+            fig = plt.figure(figsize=(5, 4))
             ax = fig.add_subplot(111, projection='3d')
             surf = ax.plot_surface(X1, X3, stress_numeric_3d[i], cmap='gist_rainbow')
             ax.set_xlabel("$x_1$")
@@ -601,23 +601,23 @@ def laminate_analysis(request: CylindricalBendingInput):
 
     if request.plots and "2d_combined" in request.plots:
         figures.update({
-            "2d_displacement": f"{public_url}/results/fig2d-displacement.png",
-            "2d_strain": f"{public_url}/results/fig2d-strain.png",
-            "2d_stress": f"{public_url}/results/fig2d-stress.png"
+            "2d_displacement": f"{public_url}/results/fig2d-displacement.png?t={timestamp}",
+            "2d_strain": f"{public_url}/results/fig2d-strain.png?t={timestamp}",
+            "2d_stress": f"{public_url}/results/fig2d-stress.png?t={timestamp}"
         })
 
     if request.plots and "2d_standalone" in request.plots:
         figures.update({
-            "2d_displacement": [f"{public_url}/results/fig2d-disp-{i}.png" for i in range(3)],
-            "2d_strain": [f"{public_url}/results/fig2d-strain-{i}.png" for i in range(5)],
-            "2d_stress": [f"{public_url}/results/fig2d-stress-{i}.png" for i in range(6)]
+            "2d_displacement": [f"{public_url}/results/fig2d-disp-{i}.png?t={timestamp}" for i in range(3)],
+            "2d_strain": [f"{public_url}/results/fig2d-strain-{i}.png?t={timestamp}" for i in range(5)],
+            "2d_stress": [f"{public_url}/results/fig2d-stress-{i}.png?t={timestamp}" for i in range(6)]
         })
 
     if request.plots and "3d" in request.plots:
         figures.update({
-            "3d_displacement": [f"{public_url}/results/fig3d-disp-{i}.png" for i in range(3)],
-            "3d_strain": [f"{public_url}/results/fig3d-strain-{i}.png" for i in range(6)],
-            "3d_stress": [f"{public_url}/results/fig3d-stress-{i}.png" for i in range(6)]
+            "3d_displacement": [f"{public_url}/results/fig3d-disp-{i}.png?t={timestamp}" for i in range(3)],
+            "3d_strain": [f"{public_url}/results/fig3d-strain-{i}.png?t={timestamp}" for i in range(6)],
+            "3d_stress": [f"{public_url}/results/fig3d-stress-{i}.png?t={timestamp}" for i in range(6)]
         })
 
     if request.plots and "probe" in request.plots and isinstance(results, dict) and "probe_results" in results:
