@@ -11,7 +11,7 @@
 
 - [Features](#features)
 - [Technologies](#technologies)
-- [Installation](#installation)
+- [Installation Locally](#installation-locally)
 - [API Documentation](#api-documentation)
 - [Testing](#testing)
 - [Contributing](#contributing)
@@ -38,52 +38,6 @@
 - **Virtual Environment (venv)**: For dependency isolation.
 
 ---
-
-## Installation Using Docker (recommend)
-
-### Prerequisites
-- Docker
-
-### Step-by-Step Guide
-
-1. **Clone the repository**:
-```bash
-git clone https://github.com/wenbinyugroup/composites-ai-tools-api.git
-cd composites-ai-tools-api
-```
-2. **Building the Docker Image**:
-You can build a Docker image for the FastAPI app using the following command:
-
-```bash
-docker build -t composites-ai-tools-api .
-```
-3. **Running the Docker Container**:
-Once the image is built, you can run the application in a Docker container:
-
-```bash
-docker run -d -p 8000:8000 composites-ai-tools-api
-```
-This will run the Composites AI Tools API app in a container and map port 8000 from the container to your local machine. You can access the application at http://localhost:8000.
-
-4. **Running Tests Inside the Docker Container**:
-To run the tests inside the running Docker container:
-
-```bash
-docker exec $(docker ps -q -f ancestor=composites-ai-tools-api) bash -c "PYTHONPATH=./ pytest"
-```
-This command sets the `PYTHONPATH` and runs `pytest` inside the running Docker container.
-
-5. **Monitoring Logs**:
-To monitor the logs from the running Docker container in real time:
-
-```bash
-docker logs -f <container_id_or_name>
-```
-You can get the container ID or name by running:
-
-```bash
-docker ps
-```
 
 ## Installation Locally
 
@@ -119,6 +73,7 @@ uvicorn app.main:app --reload
 
 This will start the Composites AI Tools API server at http://127.0.0.1:8000.
 
+
 ## API Documentation
 FastAPI automatically generates interactive API documentation using **Swagger** and **Redoc**. Once the server is running, you can access the documentation at:
 
@@ -148,6 +103,30 @@ We welcome contributions to **Composites-AI-Tools-API**! Here's how you can help
 2. **Create a new feature branch**:
 ```bash
 git checkout -b feature/your-feature-name
+```
+3. **Create your function**
+Create a single file in in `app/routers/v1` folder.
+You can refer to `lamina_engineering_constants.py` as an example
+Please define input and output model and define your function like this:
+```python
+class LaminateProperties(BaseModel):
+    e1: float = Field(..., description="In-plane or flexural modulus in the longitudinal direction.")
+    e2: float = Field(..., description="In-plane or flexural modulus in the transverse direction.")
+    g12: float = Field(..., description="Shear modulus in the 1-2 plane.")
+    nu12: float = Field(..., description="Poisson's ratio in the 1-2 plane.")
+    eta121: float = Field(..., description="Shear coupling term (eta121).")
+    eta122: float = Field(..., description="Shear coupling term (eta122).")
+
+class LaminatePlatePropertiesResponse(BaseModel):
+    A: list = Field(..., description="In-plane stiffness matrix (6x6).")
+    B: list = Field(..., description="Coupling stiffness matrix (6x6).")
+    D: list = Field(..., description="Flexural stiffness matrix (6x6).")
+    in_plane_properties: LaminateProperties = Field(..., description="In-plane engineering properties.")
+    flexural_properties: LaminateProperties = Field(..., description="Flexural engineering properties.")
+
+
+@router.post("/laminate-plate-properties", response_model=LaminatePlatePropertiesResponse)
+async def calculate_laminate_plate_properties(data: LaminatePlatePropertiesInput):
 ```
 3. **Commit your changes**:
 ```bash
