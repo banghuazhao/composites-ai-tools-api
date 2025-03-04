@@ -1,5 +1,4 @@
 import os
-import json
 import time
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,7 +7,7 @@ from scipy.linalg import null_space
 import matplotlib
 from pydantic import BaseModel, Field
 from typing import List, Dict, Optional, Union
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 router = APIRouter()
 
@@ -236,7 +235,6 @@ class Analysis:
 
 # ===================== Plotting Function =====================
 def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_x1, plots):
-    # --- 2D Plots Setup (common to both combined and standalone) ---
     # Generate 40 equally spaced points along x₁-direction from 0 to L
     x1_vals = np.linspace(0, L, 40)
     
@@ -383,7 +381,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
                 plt.close()
 
     if "3d" in plots:
-        # Prepare grid for 3D plots (reuse X1, X3)
+        # Prepare grid for 3D plots
         def evaluate_functions(func_list, threshold):
             results = np.array([func(X1, X3).real for func in func_list], dtype=object)
             for i in range(len(results)):
@@ -394,7 +392,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
         strain_numeric_3d = evaluate_functions(strain_funcs, 1e-10)
         stress_numeric_3d = evaluate_functions(stress_funcs, 1e-4)
 
-        # 3D Displacement Plots (Standalone per component)
+        # 3D Displacement Plots
         disp_titles_3d = [r"$u_1$ (m)", r"$u_2$ (m)", r"$u_3$ (m)"]
         for i in range(len(disp_numeric_3d)):
             fig = plt.figure(figsize=(6, 4))
@@ -409,7 +407,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             plt.savefig(os.path.join(RESULTS_DIR, f"fig3d-disp-{i}.png"))
             plt.close(fig)
 
-        # 3D Strain Plots (Standalone per component)
+        # 3D Strain Plots
         strain_titles_3d = [r"$\epsilon_{11}$", r"$\epsilon_{22}$", r"$\epsilon_{33}$",
                             r"$\gamma_{23}$", r"$\gamma_{13}$", r"$\gamma_{12}$"]
         for i in range(len(strain_numeric_3d)):
@@ -425,7 +423,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             plt.savefig(os.path.join(RESULTS_DIR, f"fig3d-strain-{i}.png"))
             plt.close(fig)
 
-        # 3D Stress Plots (Standalone per component)
+        # 3D Stress Plots
         stress_titles_3d = [r"$\sigma_{11}$ (Pa)", r"$\sigma_{22}$ (Pa)", r"$\sigma_{33}$ (Pa)",
                             r"$\sigma_{23}$ (Pa)", r"$\sigma_{13}$ (Pa)", r"$\sigma_{12}$ (Pa)"]
         for i in range(len(stress_numeric_3d)):
@@ -445,12 +443,14 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
 def probe_value(disp, strain, stress, L, h, x1_input, x3_input, x1, x3):
     try:
         if not (0 <= x1_input <= L):
-            raise ValueError(f"x1={x1_input} is out of bounds. It should be within [0, {L}].")
+            return {"error": f"x1={x1_input} is out of bounds. It should be within [0, {L}]."}
         if not (-h/2 <= x3_input <= h/2):
-            raise ValueError(f"x3={x3_input} is out of bounds. It should be within [{-h/2}, {h/2}].")
+            return {"error": f"x3={x3_input} is out of bounds. It should be within [{-h/2}, {h/2}]."}
+        
         disp_funcs = [sp.lambdify((x1, x3), d, "numpy") for d in disp]
         strain_funcs = [sp.lambdify((x1, x3), s, "numpy") for s in strain]
         stress_funcs = [sp.lambdify((x1, x3), s, "numpy") for s in stress]
+
         disp_probe = {
             "U": float(disp_funcs[0](x1_input, x3_input).real),
             "V": float(disp_funcs[1](x1_input, x3_input).real),
@@ -473,46 +473,71 @@ def probe_value(disp, strain, stress, L, h, x1_input, x3_input, x1, x3):
             "σ_12": float(stress_funcs[5](x1_input, x3_input).real)
         }
         return {"displacement": disp_probe, "strain": strain_probe, "stress": stress_probe}
+
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        return {"error": str(e)}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error in probing: {str(e)}")
+        return {"error": f"Error in probing: {str(e)}"}
 
-# ===================== Configuration =====================
-def load_config(config_file="config.json"):
-    if os.path.exists(config_file):
-        with open(config_file, "r") as f:
-            return json.load(f)
-    return {}
-
-def run_laminate_analysis(L=4.0, h=1.0, q0=1e6, layer_angles=[0],
-                          material_props=None, disp_x1=None, strain_x1=None,
-                          stress_x1=None, probe_x1=None, probe_x3=None, plots=["3d"]):
-    config = load_config("config.json")
-    L = config.get("L", L)
-    h = config.get("h", h)
-    q0 = config.get("q0", q0)
-    layer_angles = config.get("layer_angles", layer_angles)
-    if material_props is None:
-        material_props = config.get("material_props", {
-            'E1': 140e9, 'E2': 10e9, 'E3': 10e9,
-            'G12': 7e9, 'G13': 7e9, 'G23': 3.36e9,
-            'nu12': 0.3, 'nu13': 0.3, 'nu23': 0.49
-        })
+# ===================== Run analysis =====================
+def run_laminate_analysis(L, h, q0, layer_angles, material_props, disp_x1=None, strain_x1=None, stress_x1=None, probe_x1=None, probe_x3=None, plots=None):
+    input_error = check_inputs(L, h, layer_angles, material_props)
+    if input_error:
+        return {"error": input_error}
     if disp_x1 is None:
-        disp_x1 = config.get("disp_x1", [0, 0, L/2])
+        disp_x1 = [0, 0, L/2]
     if strain_x1 is None:
-        strain_x1 = config.get("strain_x1", [L/2, L/2, 0, 0, L/2])
+        strain_x1 = [L/2, L/2, 0, 0, L/2]
     if stress_x1 is None:
-        stress_x1 = config.get("stress_x1", [L/2, L/2, L/2, 0, 0, L/2])
-    num_layers = len(layer_angles)
-    analysis = Analysis(L, h, q0, layer_angles, material_props, num_layers)
+        stress_x1 = [L/2, L/2, L/2, 0, 0, L/2]
+    # Perform analysis
+    analysis = Analysis(L, h, q0, layer_angles, material_props, len(layer_angles))
+    # Solve for displacement, strain, and stress
     disp, strain, stress = analysis.solve()
+    # Generate plots
     plot_results(disp, strain, stress, L, h, analysis.x1, analysis.x3, disp_x1, strain_x1, stress_x1, plots)
+    # Probe values if x1 and x3 are specified
     if probe_x1 is not None and probe_x3 is not None:
         probed_results = probe_value(disp, strain, stress, L, h, probe_x1, probe_x3, analysis.x1, analysis.x3)
         return {"probe_results": probed_results}
     return {}
+
+# ===================== Check inputs =====================
+def check_inputs(L, h, layer_angles, material_props):
+    # Check geometry
+    if not L > 0:
+        return f"Length {L} must be positive."
+    if not h > 0:
+        return f"Height {h} must be positive."
+    if not len(layer_angles) > 0:
+        return f"The number of layers {len(layer_angles)} must be a positive integer."
+    
+    # Ensure all required properties exist
+    required_keys = ['E1', 'E2', 'E3', 'G12', 'G13', 'G23', 'nu12', 'nu13', 'nu23']
+    missing_keys = [key for key in required_keys if key not in material_props]
+    if missing_keys:
+        return f"Missing material properties: {', '.join(missing_keys)}."
+
+    # Check positive values for stiffness parameters
+    invalid_moduli = [k for k in ['E1', 'E2', 'E3', 'G12', 'G13', 'G23'] if material_props[k] <= 0]
+    if invalid_moduli:
+        return f"The following parameters must be positive: {', '.join(invalid_moduli)}."
+
+    # Assign values
+    E1, E2, E3 = material_props['E1'], material_props['E2'], material_props['E3']
+    nu12, nu13, nu23 = material_props['nu12'], material_props['nu13'], material_props['nu23']
+    # Compute Poisson's ratios
+    nu21 = (E2 / E1) * nu12
+    nu31 = (E3 / E1) * nu13
+    nu32 = (E3 / E2) * nu23
+    # Check material stability conditions
+    if not (1 - nu12 * nu21 > 0 and
+            1 - nu13 * nu31 > 0 and
+            1 - nu23 * nu32 > 0 and
+            1 - nu12 * nu21 - nu23 * nu32 - nu13 * nu31 - 2 * nu21 * nu13 * nu32 > 0):
+        return "Given material properties are unrealistic."
+
+    return None  # Return None if all inputs are valid
 
 # ===================== Cylindrical Bending Analysis with Input/Output =====================
 class CylindricalBendingInput(BaseModel):
@@ -520,17 +545,22 @@ class CylindricalBendingInput(BaseModel):
     h: float = Field(1.0, description="Thickness of the laminate (m)")
     q0: float = Field(1e6, description="Applied load on the laminate (Pa)")
     layer_angles: List[float] = Field([0], description="List of layer angles in degrees")
-    material_props: Optional[Dict] = Field(None, description="Material properties (e.g., E1, E2, E3, G12, G13, G23, nu12, nu13, nu23)")
+    material_props: Dict[str, float] = Field({
+        "E1": 140000000000, "E2": 10000000000, "E3": 10000000000,
+        "G12": 7000000000, "G13": 7000000000, "G23": 3360000000,
+        "nu12": 0.3, "nu13": 0.3, "nu23": 0.49
+    }, description="Material properties")
     disp_x1: Optional[List[float]] = Field(None, description="x1 coordinates for displacement evaluation")
     strain_x1: Optional[List[float]] = Field(None, description="x1 coordinates for strain evaluation")
     stress_x1: Optional[List[float]] = Field(None, description="x1 coordinates for stress evaluation")
     probe_x1: Optional[float] = Field(None, description="x1 coordinate for probing specific values")
     probe_x3: Optional[float] = Field(None, description="x3 coordinate for probing specific values")
-    plots: Optional[List[str]] = Field(None, description="List of plot types to generate (e.g., '2d_combined', '3d')")
+    plots: List[str] = Field(["2d_combined"], description="List of plot types to generate (e.g., '2d_combined', '3d')")
 
 class CylindricalBendingOutput(BaseModel):
     figures: Dict[str, Union[str, List[str]]] = Field(default_factory=dict, description="Mapping of plot names to accessible URLs or list of URLs")
     probe_results: Optional[Dict] = Field(None, description="Probed displacement, strain, and stress values if provided")
+    error: Optional[str] = Field(None, description="Error message if an error occurred")
 
 @router.post("/cylindrical-bending-analysis", response_model=CylindricalBendingOutput)
 def laminate_analysis(request: CylindricalBendingInput):
@@ -589,10 +619,13 @@ def laminate_analysis(request: CylindricalBendingInput):
             probe_x3=request.probe_x3,
             plots = request.plots
         )
+        # If an error occurred during analysis, return it in the output.
+        if "error" in results:
+            return CylindricalBendingOutput(figures={},probe_results=None,error=results["error"])
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        return CylindricalBendingOutput(figures={},probe_results=None,error=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return CylindricalBendingOutput(figures={},probe_results=None,error=f"Unexpected error: {str(e)}")
     
     public_url = get_backend_url()
     timestamp = int(time.time())  # Generate a unique timestamp
@@ -627,4 +660,4 @@ def laminate_analysis(request: CylindricalBendingInput):
             "probe_stress": results["probe_results"]["stress"]
         }
 
-    return CylindricalBendingOutput(figures=figures, probe_results=probe_results)
+    return CylindricalBendingOutput(figures=figures, probe_results=probe_results, error = None)
