@@ -227,7 +227,10 @@ class Analysis:
 
 # ===================== Plotting Function =====================
 # Initialize Redis client
-redis_client = redis.Redis(host="localhost", port=6379, db=0)
+redis_url = os.getenv("REDIS_URL")
+if not redis_url:
+    raise ValueError("Failed to get redis url because Heroku Redis is not enabled.")
+redis_client = redis.Redis.from_url(redis_url, decode_responses=True)
 
 # Store multiple plots in Redis under a single request ID
 def redis_store_plots(plots):
@@ -268,7 +271,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
     x3_vals = []
     for i in range(num_sections):
         pts = np.linspace(layer_boundaries[i] + 1e-10, layer_boundaries[i+1] - 1e-10,
-                          points_per_section[i], endpoint=False)
+                          points_per_section[i], endpoint=True)
         x3_vals.extend(pts)
         if i < num_sections - 1:
             x3_vals.append(layer_boundaries[i+1] - 1e-10)
