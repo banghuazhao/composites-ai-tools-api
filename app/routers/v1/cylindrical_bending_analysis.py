@@ -229,7 +229,7 @@ def get_redis_client():
     redis_url = os.getenv("REDIS_URL")
     if not redis_url:
         raise ValueError("Failed to get redis url because Heroku Redis is not enabled.")
-    return redis.Redis.from_url(redis_url, decode_responses=True)
+    return redis.Redis.from_url(redis_url, decode_responses=False)
 
 # Store multiple plots in Redis under a single request ID
 def redis_store_plots(plots):
