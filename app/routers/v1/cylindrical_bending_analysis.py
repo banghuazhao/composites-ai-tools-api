@@ -1,14 +1,12 @@
 import os
-import time
 import numpy as np
 import matplotlib.pyplot as plt
 import sympy as sp
-import json
 from scipy.linalg import null_space
 import matplotlib
 from pydantic import BaseModel, Field
-from typing import List, Dict, Optional, Union
-from fastapi import APIRouter
+from typing import List, Dict, Optional
+from fastapi import APIRouter, Response
 import redis
 import uuid
 import io
@@ -227,10 +225,11 @@ class Analysis:
 
 # ===================== Plotting Function =====================
 # Initialize Redis client
-redis_url = os.getenv("REDIS_URL")
-if not redis_url:
-    raise ValueError("Failed to get redis url because Heroku Redis is not enabled.")
-redis_client = redis.Redis.from_url(redis_url, decode_responses=True)
+def get_redis_client():
+    redis_url = os.getenv("REDIS_URL")
+    if not redis_url:
+        raise ValueError("Failed to get redis url because Heroku Redis is not enabled.")
+    return redis.Redis.from_url(redis_url, decode_responses=True)
 
 # Store multiple plots in Redis under a single request ID
 def redis_store_plots(plots):
@@ -244,7 +243,8 @@ def redis_store_plots(plots):
 
         # Store binary data in Redis
         redis_key = f"{request_id}:{plot_name}"
-        redis_client.setex(redis_key, 1800, buf.getvalue())  # Store for 30 min (1800s)
+        redis_client = get_redis_client()
+        redis_client.setex(redis_key, 3600, buf.getvalue())  # Store for 1 hour (3600s)
 
         # Store URL reference
         stored_plots[plot_name] = f"/get-plot/{request_id}/{plot_name}"
@@ -345,6 +345,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             plt.ylabel("Displacement (m)")
             plt.legend()
             plt.grid(True)
+            fig_disp.tight_layout()
             all_plots["2d_displacement"] = fig_disp
             plt.close(fig_disp)
 
@@ -356,6 +357,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             plt.ylabel("Strain")
             plt.legend()
             plt.grid(True)
+            fig_strain.tight_layout()
             all_plots["2d_strain"] = fig_strain
             plt.close(fig_strain)
 
@@ -367,6 +369,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             plt.ylabel("Stress (Pa)")
             plt.legend()
             plt.grid(True)
+            fig_stress.tight_layout()
             all_plots["2d_stress"] = fig_stress
             plt.close(fig_stress)
 
@@ -678,6 +681,7 @@ def laminate_analysis(request: CylindricalBendingInput):
 @router.get("/get-plot/{request_id}/{plot_name}")
 def get_plot(request_id: str, plot_name: str):
     redis_key = f"{request_id}:{plot_name}"
+    redis_client = get_redis_client()
     image_data = redis_client.get(redis_key)
 
     if image_data is None:
