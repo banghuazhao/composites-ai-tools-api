@@ -1,27 +1,17 @@
 import os
-import time
 import numpy as np
 import matplotlib.pyplot as plt
 import sympy as sp
 from scipy.linalg import null_space
 import matplotlib
 from pydantic import BaseModel, Field
-from typing import List, Dict, Optional, Union
-from fastapi import APIRouter
+from typing import List, Dict, Optional
+from fastapi import APIRouter, Response
+import redis
+import uuid
+import io
 
 router = APIRouter()
-
-# Use a non-interactive backend for matplotlib
-matplotlib.use("Agg")
-
-# Ensure "results" directory exists
-RESULTS_DIR = os.path.join(os.getcwd(), "results")
-if not os.path.exists(RESULTS_DIR):
-    os.makedirs(RESULTS_DIR)
-
-# ----------------- Helper Function to Get ngrok URL -----------------
-def get_backend_url():
-    return os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
 
 # ===================== Cylindrical Bending Analysis Code =====================
 class Analysis:
@@ -234,6 +224,36 @@ class Analysis:
         return displacement_field, strain_field, stress_field
 
 # ===================== Plotting Function =====================
+# Initialize Redis client
+def get_redis_client():
+    redis_url = os.getenv("REDIS_URL")
+    if not redis_url:
+        raise ValueError("Failed to get redis url because Heroku Redis is not enabled.")
+    return redis.Redis.from_url(redis_url, decode_responses=True)
+
+# Store multiple plots in Redis under a single request ID
+def redis_store_plots(plots):
+    request_id = str(uuid.uuid4())  # Unique ID per request
+    stored_plots = {}
+
+    for plot_name, fig in plots.items():
+        buf = io.BytesIO()
+        fig.savefig(buf, format="png")  # Save figure as PNG
+        buf.seek(0)
+
+        # Store binary data in Redis
+        redis_key = f"{request_id}:{plot_name}"
+        redis_client = get_redis_client()
+        redis_client.setex(redis_key, 3600, buf.getvalue())  # Store for 1 hour (3600s)
+
+        # Store URL reference
+        stored_plots[plot_name] = f"/get-plot/{request_id}/{plot_name}"
+
+    return request_id, stored_plots  # Return request ID & URL dictionary
+
+# Use a non-interactive backend for matplotlib
+matplotlib.use("Agg")
+
 def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_x1, plots):
     # Generate 40 equally spaced points along x₁-direction from 0 to L
     x1_vals = np.linspace(0, L, 40)
@@ -251,7 +271,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
     x3_vals = []
     for i in range(num_sections):
         pts = np.linspace(layer_boundaries[i] + 1e-10, layer_boundaries[i+1] - 1e-10,
-                          points_per_section[i], endpoint=False)
+                          points_per_section[i], endpoint=True)
         x3_vals.extend(pts)
         if i < num_sections - 1:
             x3_vals.append(layer_boundaries[i+1] - 1e-10)
@@ -267,6 +287,10 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
     strain_funcs = [sp.lambdify((x1, x3), s, "numpy") for s in strain]
     stress_funcs = [sp.lambdify((x1, x3), s, "numpy") for s in stress]
     
+    # Create a dictionary to collect all figures for this request
+    all_plots = {}
+    
+    # If 2D plots are requested
     if "2d_combined" in plots or "2d_standalone" in plots:
         # Evaluate 2D fields at user-specified x₁ values
         disp_numeric_1d = np.array([
@@ -311,75 +335,80 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             rf"$\sigma_{{12}}$ at $x_1 = {stress_x1[5]} (m)$"
         ]
 
-        # --- Run only requested plots ---
+        # If 2D combined plots are requested
         if "2d_combined" in plots:
             # Combined 2D Displacement Plot
-            plt.figure(figsize=(6, 4))
+            fig_disp = plt.figure(figsize=(6, 4))
             for i in range(len(disp_numeric_1d)):
                 plt.plot(x3_vals, disp_numeric_1d[i], linewidth=2, label=disp_labels[i])
             plt.xlabel(r"$x_3$ (m)")
             plt.ylabel("Displacement (m)")
             plt.legend()
             plt.grid(True)
-            plt.savefig(os.path.join(RESULTS_DIR, "fig2d-displacement.png"))
-            plt.close()
+            fig_disp.tight_layout()
+            all_plots["2d_displacement"] = fig_disp
+            plt.close(fig_disp)
 
             # Combined 2D Strain Plot
-            plt.figure(figsize=(6, 4))
+            fig_strain = plt.figure(figsize=(6, 4))
             for i in range(len(strain_numeric_1d)):
                 plt.plot(x3_vals, strain_numeric_1d[i], linewidth=2, label=strain_labels[i])
             plt.xlabel(r"$x_3$ (m)")
             plt.ylabel("Strain")
             plt.legend()
             plt.grid(True)
-            plt.savefig(os.path.join(RESULTS_DIR, "fig2d-strain.png"))
-            plt.close()
+            fig_strain.tight_layout()
+            all_plots["2d_strain"] = fig_strain
+            plt.close(fig_strain)
 
             # Combined 2D Stress Plot
-            plt.figure(figsize=(6, 4))
+            fig_stress = plt.figure(figsize=(6, 4))
             for i in range(len(stress_numeric_1d)):
                 plt.plot(x3_vals, stress_numeric_1d[i], linewidth=2, label=stress_labels[i])
             plt.xlabel(r"$x_3$ (m)")
             plt.ylabel("Stress (Pa)")
             plt.legend()
             plt.grid(True)
-            plt.savefig(os.path.join(RESULTS_DIR, "fig2d-stress.png"))
-            plt.close()
+            fig_stress.tight_layout()
+            all_plots["2d_stress"] = fig_stress
+            plt.close(fig_stress)
 
+        # If 2D separate plots are requested
         if "2d_standalone" in plots:
-            # Standalone 2D Displacement Plots
+            # Collect standalone 2D Displacement Plots
             for i in range(len(disp_numeric_1d)):
-                plt.figure(figsize=(6, 4))
+                fig = plt.figure(figsize=(6, 4))
                 plt.plot(x3_vals, disp_numeric_1d[i], linewidth=2, label=disp_labels[i])
                 plt.xlabel(r"$x_3$ (m)")
                 plt.ylabel("Displacement (m)")
                 plt.legend()
                 plt.grid(True)
-                plt.savefig(os.path.join(RESULTS_DIR, f"fig2d-disp-{i}.png"))
-                plt.close()
+                all_plots[f"2d_disp_standalone_{i}"] = fig
+                plt.close(fig)
 
-            # Standalone 2D Strain Plots
+            # Collect standalone 2D Strain Plots
             for i in range(len(strain_numeric_1d)):
-                plt.figure(figsize=(6, 4))
+                fig = plt.figure(figsize=(6, 4))
                 plt.plot(x3_vals, strain_numeric_1d[i], linewidth=2, label=strain_labels[i])
                 plt.xlabel(r"$x_3$ (m)")
                 plt.ylabel("Strain")
                 plt.legend()
                 plt.grid(True)
-                plt.savefig(os.path.join(RESULTS_DIR, f"fig2d-strain-{i}.png"))
-                plt.close()
+                all_plots[f"2d_strain_standalone_{i}"] = fig
+                plt.close(fig)
 
-            # Standalone 2D Stress Plots
+            # Collect standalone 2D Stress Plots
             for i in range(len(stress_numeric_1d)):
-                plt.figure(figsize=(6, 4))
+                fig = plt.figure(figsize=(6, 4))
                 plt.plot(x3_vals, stress_numeric_1d[i], linewidth=2, label=stress_labels[i])
                 plt.xlabel(r"$x_3$ (m)")
                 plt.ylabel("Stress (Pa)")
                 plt.legend()
                 plt.grid(True)
-                plt.savefig(os.path.join(RESULTS_DIR, f"fig2d-stress-{i}.png"))
-                plt.close()
+                all_plots[f"2d_stress_standalone_{i}"] = fig
+                plt.close(fig)
 
+    # If 3D plots are requested
     if "3d" in plots:
         # Prepare grid for 3D plots
         def evaluate_functions(func_list, threshold):
@@ -401,10 +430,10 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             ax.set_xlabel("$x_1$")
             ax.set_ylabel("$x_3$")
             ax.set_zlabel(disp_titles_3d[i])
-            ax.set_title(f"3D Displacement {disp_titles_3d[i]}")
+            ax.set_title(f"Displacement {disp_titles_3d[i]}")
             fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10)
             fig.tight_layout()
-            plt.savefig(os.path.join(RESULTS_DIR, f"fig3d-disp-{i}.png"))
+            all_plots[f"3d_displacement_{i}"] = fig  # Collect figure
             plt.close(fig)
 
         # 3D Strain Plots
@@ -417,10 +446,10 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             ax.set_xlabel("$x_1$")
             ax.set_ylabel("$x_3$")
             ax.set_zlabel(strain_titles_3d[i])
-            ax.set_title(f"3D Strain {strain_titles_3d[i]}")
+            ax.set_title(f"Strain {strain_titles_3d[i]}")
             fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10)
             fig.tight_layout()
-            plt.savefig(os.path.join(RESULTS_DIR, f"fig3d-strain-{i}.png"))
+            all_plots[f"3d_strain_{i}"] = fig
             plt.close(fig)
 
         # 3D Stress Plots
@@ -433,13 +462,19 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             ax.set_xlabel("$x_1$")
             ax.set_ylabel("$x_3$")
             ax.set_zlabel(stress_titles_3d[i])
-            ax.set_title(f"3D Stress {stress_titles_3d[i]}")
+            ax.set_title(f"Stress {stress_titles_3d[i]}")
             fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10)
             fig.tight_layout()
-            plt.savefig(os.path.join(RESULTS_DIR, f"fig3d-stress-{i}.png"))
+            all_plots[f"3d_stress_{i}"] = fig
             plt.close(fig)
+    
+    # Store in redis after collecting all requested plots
+    plots_id, figures = redis_store_plots(all_plots)  # Store plots and get URLs
 
-# ===================== Probing Functions =====================
+    # Return the request_id and figures (URLs) in the response
+    return {"plots_id": plots_id, "figures": figures}
+
+# ===================== Probing Function =====================
 def probe_value(disp, strain, stress, L, h, x1_input, x3_input, x1, x3):
     try:
         if not (0 <= x1_input <= L):
@@ -494,13 +529,19 @@ def run_laminate_analysis(L, h, q0, layer_angles, material_props, disp_x1=None, 
     analysis = Analysis(L, h, q0, layer_angles, material_props, len(layer_angles))
     # Solve for displacement, strain, and stress
     disp, strain, stress = analysis.solve()
-    # Generate plots
-    plot_results(disp, strain, stress, L, h, analysis.x1, analysis.x3, disp_x1, strain_x1, stress_x1, plots)
+    # Initialize results as a dictionary
+    result_dict = {}
+    # Generate plots and get the id assigned to the plots
+    plots_dict = plot_results(disp, strain, stress, L, h, analysis.x1, analysis.x3, disp_x1, strain_x1, stress_x1, plots)
+    if plots_dict:
+        result_dict["plots_id"] = plots_dict["plots_id"]
+        result_dict["figures"] = plots_dict["figures"]
     # Probe values if x1 and x3 are specified
     if probe_x1 is not None and probe_x3 is not None:
         probed_results = probe_value(disp, strain, stress, L, h, probe_x1, probe_x3, analysis.x1, analysis.x3)
-        return {"probe_results": probed_results}
-    return {}
+        result_dict["probe_results"] = probed_results
+
+    return result_dict
 
 # ===================== Check inputs =====================
 def check_inputs(L, h, layer_angles, material_props):
@@ -558,10 +599,11 @@ class CylindricalBendingInput(BaseModel):
     plots: List[str] = Field(["2d_combined"], description="List of plot types to generate (e.g., '2d_combined', '3d')")
 
 class CylindricalBendingOutput(BaseModel):
-    figures: Dict[str, Union[str, List[str]]] = Field(default_factory=dict, description="Mapping of plot names to accessible URLs or list of URLs")
+    figures: Dict[str, str] = Field(default_factory=dict, description="Mapping of plot names to image URLs")
     probe_results: Optional[Dict] = Field(None, description="Probed displacement, strain, and stress values if provided")
     error: Optional[str] = Field(None, description="Error message if an error occurred")
 
+# ----------------- Handle API calls -----------------
 @router.post("/cylindrical-bending-analysis", response_model=CylindricalBendingOutput)
 def laminate_analysis(request: CylindricalBendingInput):
     """
@@ -608,7 +650,7 @@ def laminate_analysis(request: CylindricalBendingInput):
     ```
     """
     try:
-        results = run_laminate_analysis(
+        results_dict = run_laminate_analysis(
             L=request.L, h=request.h, q0=request.q0,
             layer_angles=request.layer_angles,
             material_props=request.material_props,
@@ -620,44 +662,29 @@ def laminate_analysis(request: CylindricalBendingInput):
             plots = request.plots
         )
         # If an error occurred during analysis, return it in the output.
-        if "error" in results:
-            return CylindricalBendingOutput(figures={},probe_results=None,error=results["error"])
+        if "error" in results_dict:
+            return CylindricalBendingOutput(figures={}, probe_results=None, error=results_dict["error"])
     except ValueError as e:
-        return CylindricalBendingOutput(figures={},probe_results=None,error=str(e))
+        return CylindricalBendingOutput(figures={}, probe_results=None, error=str(e))
     except Exception as e:
-        return CylindricalBendingOutput(figures={},probe_results=None,error=f"Unexpected error: {str(e)}")
+        return CylindricalBendingOutput(figures={}, probe_results=None, error=f"Unexpected error: {str(e)}")
     
-    public_url = get_backend_url()
-    timestamp = int(time.time())  # Generate a unique timestamp
-    figures = {}
-    probe_results = None
+    # Get figures from results_dict
+    figures = results_dict.get("figures", {})
 
-    if request.plots and "2d_combined" in request.plots:
-        figures.update({
-            "2d_displacement": f"{public_url}/results/fig2d-displacement.png?t={timestamp}",
-            "2d_strain": f"{public_url}/results/fig2d-strain.png?t={timestamp}",
-            "2d_stress": f"{public_url}/results/fig2d-stress.png?t={timestamp}"
-        })
-
-    if request.plots and "2d_standalone" in request.plots:
-        figures.update({
-            "2d_displacement": [f"{public_url}/results/fig2d-disp-{i}.png?t={timestamp}" for i in range(3)],
-            "2d_strain": [f"{public_url}/results/fig2d-strain-{i}.png?t={timestamp}" for i in range(5)],
-            "2d_stress": [f"{public_url}/results/fig2d-stress-{i}.png?t={timestamp}" for i in range(6)]
-        })
-
-    if request.plots and "3d" in request.plots:
-        figures.update({
-            "3d_displacement": [f"{public_url}/results/fig3d-disp-{i}.png?t={timestamp}" for i in range(3)],
-            "3d_strain": [f"{public_url}/results/fig3d-strain-{i}.png?t={timestamp}" for i in range(6)],
-            "3d_stress": [f"{public_url}/results/fig3d-stress-{i}.png?t={timestamp}" for i in range(6)]
-        })
-
-    if request.plots and "probe" in request.plots and isinstance(results, dict) and "probe_results" in results:
-        probe_results = {
-            "probe_displacement": results["probe_results"]["displacement"],
-            "probe_strain": results["probe_results"]["strain"],
-            "probe_stress": results["probe_results"]["stress"]
-        }
+    # Get probe results
+    probe_results = results_dict.get("probe_results", None)
 
     return CylindricalBendingOutput(figures=figures, probe_results=probe_results, error = None)
+
+# Retrieve multiple plots from Redis using the request ID
+@router.get("/get-plot/{request_id}/{plot_name}")
+def get_plot(request_id: str, plot_name: str):
+    redis_key = f"{request_id}:{plot_name}"
+    redis_client = get_redis_client()
+    image_data = redis_client.get(redis_key)
+
+    if image_data is None:
+        return Response(content="Plot not found or expired.", status_code=404)
+
+    return Response(content=image_data, media_type="image/png")
