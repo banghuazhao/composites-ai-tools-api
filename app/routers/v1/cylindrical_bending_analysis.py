@@ -229,7 +229,7 @@ def get_redis_client():
     redis_url = os.getenv("REDIS_URL")
     if not redis_url:
         raise ValueError("Failed to get redis url because Heroku Redis is not enabled.")
-    return redis.Redis.from_url(redis_url, decode_responses=True)
+    return redis.Redis.from_url(redis_url, decode_responses=False)
 
 # Store multiple plots in Redis under a single request ID
 def redis_store_plots(plots):
@@ -649,6 +649,7 @@ def laminate_analysis(request: CylindricalBendingInput):
       }'
     ```
     """
+    BASE_URL = "https://composites-ai-tools-api-a88cb33feb62.herokuapp.com/api/v1"
     try:
         results_dict = run_laminate_analysis(
             L=request.L, h=request.h, q0=request.q0,
@@ -670,7 +671,7 @@ def laminate_analysis(request: CylindricalBendingInput):
         return CylindricalBendingOutput(figures={}, probe_results=None, error=f"Unexpected error: {str(e)}")
     
     # Get figures from results_dict
-    figures = results_dict.get("figures", {})
+    figures = {name: f"{BASE_URL}{path}" for name, path in results_dict.get("figures", {}).items()}
 
     # Get probe results
     probe_results = results_dict.get("probe_results", None)
