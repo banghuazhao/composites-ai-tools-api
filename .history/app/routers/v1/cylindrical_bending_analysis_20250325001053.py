@@ -338,7 +338,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
         # If 2D combined plots are requested
         if "2d_combined" in plots:
             # Combined 2D Displacement Plot
-            fig_disp = plt.figure(figsize=(5, 3))
+            fig_disp = plt.figure(figsize=(6, 4))
             for i in range(len(disp_numeric_1d)):
                 plt.plot(x3_vals, disp_numeric_1d[i], linewidth=2, label=disp_labels[i])
             plt.xlabel(r"$x_3$ (m)")
@@ -350,7 +350,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             plt.close(fig_disp)
 
             # Combined 2D Strain Plot
-            fig_strain = plt.figure(figsize=(5, 3))
+            fig_strain = plt.figure(figsize=(6, 4))
             for i in range(len(strain_numeric_1d)):
                 plt.plot(x3_vals, strain_numeric_1d[i], linewidth=2, label=strain_labels[i])
             plt.xlabel(r"$x_3$ (m)")
@@ -362,7 +362,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
             plt.close(fig_strain)
 
             # Combined 2D Stress Plot
-            fig_stress = plt.figure(figsize=(5, 3))
+            fig_stress = plt.figure(figsize=(6, 4))
             for i in range(len(stress_numeric_1d)):
                 plt.plot(x3_vals, stress_numeric_1d[i], linewidth=2, label=stress_labels[i])
             plt.xlabel(r"$x_3$ (m)")
@@ -377,7 +377,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
         if "2d_standalone" in plots:
             # Collect standalone 2D Displacement Plots
             for i in range(len(disp_numeric_1d)):
-                fig = plt.figure(figsize=(5, 3))
+                fig = plt.figure(figsize=(6, 4))
                 plt.plot(x3_vals, disp_numeric_1d[i], linewidth=2, label=disp_labels[i])
                 plt.xlabel(r"$x_3$ (m)")
                 plt.ylabel("Displacement (m)")
@@ -388,7 +388,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
 
             # Collect standalone 2D Strain Plots
             for i in range(len(strain_numeric_1d)):
-                fig = plt.figure(figsize=(5, 3))
+                fig = plt.figure(figsize=(6, 4))
                 plt.plot(x3_vals, strain_numeric_1d[i], linewidth=2, label=strain_labels[i])
                 plt.xlabel(r"$x_3$ (m)")
                 plt.ylabel("Strain")
@@ -399,7 +399,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
 
             # Collect standalone 2D Stress Plots
             for i in range(len(stress_numeric_1d)):
-                fig = plt.figure(figsize=(5, 3))
+                fig = plt.figure(figsize=(6, 4))
                 plt.plot(x3_vals, stress_numeric_1d[i], linewidth=2, label=stress_labels[i])
                 plt.xlabel(r"$x_3$ (m)")
                 plt.ylabel("Stress (Pa)")
@@ -424,7 +424,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
         # 3D Displacement Plots
         disp_titles_3d = [r"$u_1$ (m)", r"$u_2$ (m)", r"$u_3$ (m)"]
         for i in range(len(disp_numeric_3d)):
-            fig = plt.figure(figsize=(5, 3))
+            fig = plt.figure(figsize=(6, 4))
             ax = fig.add_subplot(111, projection='3d')
             surf = ax.plot_surface(X1, X3, disp_numeric_3d[i], cmap='gist_rainbow')
             ax.set_xlabel("$x_1$")
@@ -440,7 +440,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
         strain_titles_3d = [r"$\epsilon_{11}$", r"$\epsilon_{22}$", r"$\epsilon_{33}$",
                             r"$\gamma_{23}$", r"$\gamma_{13}$", r"$\gamma_{12}$"]
         for i in range(len(strain_numeric_3d)):
-            fig = plt.figure(figsize=(5, 3))
+            fig = plt.figure(figsize=(6, 4))
             ax = fig.add_subplot(111, projection='3d')
             surf = ax.plot_surface(X1, X3, strain_numeric_3d[i], cmap='gist_rainbow')
             ax.set_xlabel("$x_1$")
@@ -456,7 +456,7 @@ def plot_results(disp, strain, stress, L, h, x1, x3, disp_x1, strain_x1, stress_
         stress_titles_3d = [r"$\sigma_{11}$ (Pa)", r"$\sigma_{22}$ (Pa)", r"$\sigma_{33}$ (Pa)",
                             r"$\sigma_{23}$ (Pa)", r"$\sigma_{13}$ (Pa)", r"$\sigma_{12}$ (Pa)"]
         for i in range(len(stress_numeric_3d)):
-            fig = plt.figure(figsize=(5, 3))
+            fig = plt.figure(figsize=(6, 4))
             ax = fig.add_subplot(111, projection='3d')
             surf = ax.plot_surface(X1, X3, stress_numeric_3d[i], cmap='gist_rainbow')
             ax.set_xlabel("$x_1$")
@@ -649,7 +649,6 @@ def laminate_analysis(request: CylindricalBendingInput):
       }'
     ```
     """
-    BASE_URL = "https://composites-ai-tools-api-a88cb33feb62.herokuapp.com/api/v1"
     try:
         results_dict = run_laminate_analysis(
             L=request.L, h=request.h, q0=request.q0,
@@ -671,7 +670,7 @@ def laminate_analysis(request: CylindricalBendingInput):
         return CylindricalBendingOutput(figures={}, probe_results=None, error=f"Unexpected error: {str(e)}")
     
     # Get figures from results_dict
-    figures = {name: f"{BASE_URL}{path}" for name, path in results_dict.get("figures", {}).items()}
+    figures = results_dict.get("figures", {})
 
     # Get probe results
     probe_results = results_dict.get("probe_results", None)
