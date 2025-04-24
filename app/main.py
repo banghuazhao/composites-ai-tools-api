@@ -13,6 +13,7 @@ app = FastAPI()
 origins = [
     "http://localhost:5000",               # Allow requests from your local development domain
     "https://compositesai.com",    # Replace with your actual production domain
+    "https://composites-ai.web.app"
 ]
 
 app.add_middleware(
