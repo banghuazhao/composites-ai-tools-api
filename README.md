@@ -73,6 +73,23 @@ uvicorn app.main:app --reload
 
 This will start the Composites AI Tools API server at http://127.0.0.1:8000.
 
+---
+
+## Redis Setup
+
+APIs may use Redis for data storage. In the code of an API that uses Redis, the Redis connection can be configured via an environment variable:
+
+```python
+redis_url = os.getenv("REDIS_URL")
+```
+
+To run the backend with your own Redis server, set the REDIS_URL environment variable:
+
+```bash
+export REDIS_URL=redis://localhost:6379
+```
+
+For production deployments, define this variable in your `systemd` service file, `.env` file, or deployment configuration so the environment variable `REDIS_URL` loads automatically when the server starts.
 
 ## API Documentation
 FastAPI automatically generates interactive API documentation using **Swagger** and **Redoc**. Once the server is running, you can access the documentation at:
