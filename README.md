@@ -83,14 +83,34 @@ APIs may use Redis for data storage. In the code of an API that uses Redis, the 
 redis_url = os.getenv("REDIS_URL")
 ```
 
-To run the backend with your own Redis server, set the REDIS_URL environment variable:
+Install Redis and ensure it’s running on the default port (6379).
+
+- **Ubuntu/Debian**:
+  ```bash
+  sudo apt update
+  sudo apt install redis
+  sudo systemctl start redis
+  redis-cli ping  # Should return "PONG"
+  ```
+
+- **macOS**:
+  ```bash
+  brew install redis
+  brew services start redis
+  redis-cli ping  # Should return "PONG"
+  ```
+
+- **Windows**:
+  Use Windows Subsystem for Linux (WSL) and follow the Ubuntu instructions, or download Redis binaries from [GitHub](https://github.com/tporadowski/redis).
+
+Then create a `.env` file in your project root:
 
 ```bash
-export REDIS_URL=redis://localhost:6379
+# .env
+REDIS_URL=redis://localhost:6379
 ```
 
-For production deployments, define this variable in your `systemd` service file, `.env` file, or deployment configuration so the environment variable `REDIS_URL` loads automatically when the server starts.
-
+For production deployments, change the environment variable `REDIS_URL` to the actually Redis URL.
 ## API Documentation
 FastAPI automatically generates interactive API documentation using **Swagger** and **Redoc**. Once the server is running, you can access the documentation at:
 
